@@ -1,4 +1,3 @@
-# employees/apps.py
 from django.apps import AppConfig
 
 class EmployeesConfig(AppConfig):

@@ -10,6 +10,8 @@ from django.urls import path, include
 
     
 
+    
+
 schema_view = get_schema_view(
    openapi.Info(
       title="Employee",
@@ -21,10 +23,8 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path("visualizer/", visualizer, name="visualizer"),
+    
 
-    path('admin/', admin.site.urls),
-    path('api/', include('employees.urls')),
     path('admin/', admin.site.urls),
     path('api/', include('employees.urls')),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
