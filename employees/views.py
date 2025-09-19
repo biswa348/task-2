@@ -1,23 +1,20 @@
 from django.shortcuts import render
-from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework import viewsets
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db.models import Count, Avg
 from .models import Employee
 from .serializers import EmployeeSerializer
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import F
+
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = 'per_page'
     max_page_size = 1000
 
+
 class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    list:
-    Return paginated list of employees. Filtering by department and gender using query params.
-    """
     queryset = Employee.objects.all().order_by('id')
     serializer_class = EmployeeSerializer
     pagination_class = StandardResultsSetPagination
@@ -27,27 +24,29 @@ class EmployeeViewSet(viewsets.ReadOnlyModelViewSet):
         dept = self.request.query_params.get('department')
         gender = self.request.query_params.get('gender')
         if dept:
-            qs = qs.filter(department__iexact=dept)
+            qs = qs.filter(department__name__iexact=dept)
         if gender:
             qs = qs.filter(gender__iexact=gender)
         return qs
 
-# Analytics endpoints (function-based)
+
 @api_view(['GET'])
 def by_department(request):
-    q = Employee.objects.values('department').annotate(count=Count('id')).order_by('-count')
-    return Response({item['department'] or 'Unknown': item['count'] for item in q})
+    q = Employee.objects.values('department__name').annotate(count=Count('id')).order_by('-count')
+    return Response({item['department__name'] or 'Unknown': item['count'] for item in q})
+
 
 @api_view(['GET'])
 def avg_salary_by_department(request):
-    q = Employee.objects.values('department').annotate(avg_salary=Avg('salary'))
-    # convert Decimal to float
-    return Response({item['department'] or 'Unknown': float(item['avg_salary']) if item['avg_salary'] is not None else None for item in q})
+    q = Employee.objects.values('department__name').annotate(avg_salary=Avg('salary'))
+    return Response({item['department__name'] or 'Unknown': float(item['avg_salary']) if item['avg_salary'] is not None else None for item in q})
+
 
 @api_view(['GET'])
 def gender_split(request):
     q = Employee.objects.values('gender').annotate(count=Count('id'))
     return Response({item['gender'] or 'Unknown': item['count'] for item in q})
+
 
 @api_view(['GET'])
 def experience_histogram(request):
@@ -75,3 +74,7 @@ def experience_histogram(request):
         label = f"{round(low,1)}-{round(high,1)}"
         buckets[label] += 1
     return Response(buckets)
+
+
+def visualizer(request):
+    return render(request, "visualizer.html")
